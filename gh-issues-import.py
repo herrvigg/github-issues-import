@@ -5,6 +5,7 @@ import urllib.error
 import urllib.parse
 import json
 import base64
+import time
 import sys
 import os
 import datetime
@@ -294,6 +295,8 @@ def import_comments(comments, issue_number):
 
         result_comment = send_request('target', "issues/%s/comments" % issue_number, comment)
         result_comments.append(result_comment)
+        # we need a delay to prevent abuse rate limit
+        time.sleep(1)
         print('.', end='', flush=True)
 
     return result_comments
