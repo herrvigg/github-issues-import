@@ -327,7 +327,8 @@ def import_issues(issues):
         print("(%d/%d)\t" % (len(new_issues)+1, len(issues)), issue['title'])
 
         new_issue = {
-            'title': issue['title']
+            'title': issue['title'],
+            'orig-id': issue['number']
         }
 
         if issue['closed_at']:
@@ -371,6 +372,7 @@ def import_issues(issues):
 
         if "pull_request" in issue and issue['pull_request']['html_url'] is not None:
             new_issue['body'] = format_pull_request(template_data)
+            new_issue['is_pull_request'] = {}
         else:
             new_issue['body'] = format_issue(template_data)
 
@@ -410,8 +412,13 @@ def import_issues(issues):
             issue['labels'] = issue_labels
             del issue['label_objects']
 
+        if 'pull_request' in issue:
+            issue['labels'].append("Import PR")
+        else:
+            issue['labels'].append("Import")
+
         result_issue = send_request('target', "issues", issue)
-        print("Created issue '%s'" % result_issue['title'])
+        print("Created issue %d from %d '%s'" % (result_issue['number'], issue['orig-id'], result_issue['title']))
 
         if issue['state'] == 'closed':
             closed_issue = {'state': 'closed'}
@@ -425,6 +432,9 @@ def import_issues(issues):
             print(" > Added", len(result_comments), "comments.")
 
         result_issues.append(result_issue)
+        # delay to prevent abuse rate limit
+        time.sleep(1)
+
 
     state.current = state.IMPORT_COMPLETE
 
@@ -463,5 +473,3 @@ if __name__ == '__main__':
     import_issues(issues)
 
     state.current = state.COMPLETE
-
-
