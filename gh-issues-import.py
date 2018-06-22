@@ -372,7 +372,7 @@ def import_issues(issues):
 
         if "pull_request" in issue and issue['pull_request']['html_url'] is not None:
             new_issue['body'] = format_pull_request(template_data)
-            new_issue['is_pull_request'] = {}
+            new_issue['pull_request'] = issue['pull_request']
         else:
             new_issue['body'] = format_issue(template_data)
 
@@ -413,23 +413,23 @@ def import_issues(issues):
             del issue['label_objects']
 
         if 'pull_request' in issue:
-            issue['labels'].append("Import PR")
+            issue['labels'].append("import PR")
         else:
-            issue['labels'].append("Import")
+            issue['labels'].append("import")
 
         result_issue = send_request('target', "issues", issue)
         print("Created issue %d from %d '%s'" % (result_issue['number'], issue['orig-id'], result_issue['title']))
-
-        if issue['state'] == 'closed':
-            closed_issue = {'state': 'closed'}
-            result_issue = send_request('target', "issues/%s" % result_issue['number'], closed_issue, method='PATCH')
-            print(" > Closed issue")
 
         if 'comments' in issue:
             print(" > Importing %d comments" % len(issue['comments']), end='')
             result_comments = import_comments(issue['comments'], result_issue['number'])
             print("\n")
             print(" > Added", len(result_comments), "comments.")
+
+        if issue['state'] == 'closed':
+            closed_issue = {'state': 'closed'}
+            result_issue = send_request('target', "issues/%s" % result_issue['number'], closed_issue, method='PATCH')
+            print(" > Closed issue")
 
         result_issues.append(result_issue)
         # delay to prevent abuse rate limit
