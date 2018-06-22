@@ -456,6 +456,38 @@ def import_issues(issues):
     return result_issues
 
 
+def map_source_target_issues(source_issue):
+    source_number = source_issue['number']
+    if 101 <= source_number <= 110:
+        return source_number + 20
+    elif 111 <= source_number <= 130:
+        return source_number - 10
+    else:
+        return source_number
+
+
+def patch_labels(source_issues):
+    for source_issue in source_issues:
+        new_labels = []
+        patch = False
+        if 'pull_request' in source_issue and source_issue['pull_request']['html_url'] is not None:
+            target_issue_number = map_source_target_issues(source_issue)
+            target_issue = send_request('target', "issues/%s" % target_issue_number)
+            for label in target_issue['labels']:
+                if label['name'] == 'import':
+                    new_labels.append('import PR')
+                    patch = True
+                else:
+                    new_labels.append(label['name'])
+
+        if patch:
+            patch_issue = {
+                'labels': new_labels
+            }
+            result_issue = send_request('target', "issues/%s" % target_issue['number'], patch_issue, method='PATCH')
+            print("Patched label issue->PR for issue=%d" % target_issue['number'])
+
+
 if __name__ == '__main__':
 
     state.current = state.LOADING_CONFIG
