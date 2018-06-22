@@ -68,7 +68,8 @@ def init_config():
     include_group.add_argument("--all", dest='import_all', action='store_true', help="Import all issues, regardless of state.")
     include_group.add_argument("--open", dest='import_open', action='store_true', help="Import only open issues.")
     include_group.add_argument("--closed", dest='import_closed', action='store_true', help="Import only closed issues.")
-    include_group.add_argument("-i", "--issues", type=int, nargs='+', help="The list of issues to import.");
+    include_group.add_argument("-i", "--issues", type=int, nargs='+', help="The list of issues to import.")
+    include_group.add_argument("-r", "--range", type=int, nargs=2, help="A range of issues to import.")
 
     args = arg_parser.parse_args()
 
@@ -162,8 +163,13 @@ def init_config():
     get_credentials_for('source')
     get_credentials_for('target')
 
+    source_issues = args.issues or []
+    if args.range:
+        for i in range(args.range[0], args.range[1] + 1):
+            source_issues.append(i)
+
     # Everything is here! Continue on our merry way...
-    return args.issues or []
+    return source_issues
 
 def format_date(datestring):
     # The date comes from the API in ISO-8601 format
