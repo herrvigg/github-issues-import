@@ -240,21 +240,28 @@ def get_issue_by_id(which, issue_id):
 def get_issues_by_id(which, issue_ids):
     # Populate issues based on issue IDs
     issues = []
+    print("Fetching %d issues" % len(issue_ids), end='', flush=True)
     for issue_id in issue_ids:
         issues.append(get_issue_by_id(which, int(issue_id)))
+        print('.', end='', flush=True)
 
+    print('', flush=True)
     return issues
 
 # Allowed values for state are 'open' and 'closed'
 def get_issues_by_state(which, state):
     issues = []
     page = 1
+    print("Fetching issues in state=%s" % state, end='', flush=True)
     while True:
         new_issues = send_request(which, "issues?state=%s&direction=asc&page=%d" % (state, page))
         if not new_issues:
             break
         issues.extend(new_issues)
+        print('.', end='', flush=True)
         page += 1
+
+    print('', flush=True)
     return issues
 
 def get_comments_on_issue(which, issue):
@@ -311,6 +318,8 @@ def import_comments(comments, issue_number):
 def import_issues(issues):
 
     state.current = state.GENERATING
+
+    print("Preparing import for %d issues" % len(issues))
 
     known_milestones = get_milestones('target')
     def get_milestone_by_title(title):
@@ -456,8 +465,6 @@ if __name__ == '__main__':
 
     state.current = state.FETCHING_ISSUES
 
-    print("Fetching issues...")
-
     # Argparser will prevent us from getting both issue ids and specifying issue state, so no duplicates will be added
     if len(issue_ids) > 0:
         issues += get_issues_by_id('source', issue_ids)
@@ -471,8 +478,6 @@ if __name__ == '__main__':
     # Sort issues based on their original `id` field
     # Confusing, but taken from http://stackoverflow.com/a/2878123/617937
     issues.sort(key=lambda x: x['number'])
-
-    print("Importing %d issues" % len(issues))
 
     # Further states defined within the function
     # Finally, add these issues to the target repository
