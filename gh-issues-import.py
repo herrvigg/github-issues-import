@@ -226,7 +226,7 @@ def send_request(which, url, post_data=None, method=None):
             error_message += "\nDETAILS: " + error_details['message']
         sys.exit(error_message)
 
-    return json.loads(json_data.decode("utf-8"))
+    return json.loads(json_data.decode("utf-8")) if json_data else None
 
 def get_milestones(which):
     return send_request(which, "milestones?state=open")
