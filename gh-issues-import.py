@@ -334,7 +334,7 @@ def import_issues(issues):
 
         new_issue = {
             'title': issue['title'],
-            'orig-id': issue['number']
+            'original_number': issue['number']
         }
 
         if issue['closed_at']:
@@ -424,12 +424,12 @@ def import_issues(issues):
             issue['labels'].append("import")
 
         result_issue = send_request('target', "issues", issue)
-        print("Created issue %d from %d '%s'" % (result_issue['number'], issue['orig-id'], result_issue['title']))
+        print("Created issue %d from %d '%s'" % (result_issue['number'], issue['original_number'], result_issue['title']))
 
         if 'comments' in issue:
             print(" > Importing %d comments" % len(issue['comments']), end='')
             result_comments = import_comments(issue['comments'], result_issue['number'])
-            print("\n")
+            print("")
             print(" > Added", len(result_comments), "comments.")
 
         if issue['state'] == 'closed':
