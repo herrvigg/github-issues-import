@@ -488,6 +488,22 @@ def patch_labels(source_issues):
             print("Patched label issue->PR for issue=%d" % target_issue['number'])
 
 
+def delete_issue_comments(issue_number):
+    result_comments = send_request('target', "issues/%s/comments" % issue_number)
+    for comment in result_comments:
+        comment_id = comment['id']
+        send_request('target', "issues/comments/%d" % comment_id, method='DELETE')
+    print("Removed %d comments for issue=%d" % (len(result_comments), issue_number))
+
+
+def patch_issue_content(issue_number):
+    patch_issue = {
+        'body': 'patched content'
+    }
+    result_issue = send_request('target', "issues/%s" % issue_number, patch_issue, method='PATCH')
+    print("Patched content issue=%d" % issue_number)
+
+
 if __name__ == '__main__':
 
     state.current = state.LOADING_CONFIG
