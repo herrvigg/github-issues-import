@@ -491,7 +491,6 @@ def get_release_by_tag(which, tag):
 
 
 def import_release(src_release):
-    print("Importing release %s (tag %s)" % (src_release['name'], src_release['tag_name']))
 
     template_data = {}
     template_data['user_name'] = src_release['author']['login']
@@ -509,6 +508,9 @@ def import_release(src_release):
         'body': format_release(template_data),
         'prerelease': src_release['prerelease']
     }
+
+    if src_release['target_commitish'] in ['master', 'stable']:
+        new_release['target_commitish'] = src_release['target_commitish']
 
     target_release = get_release_by_tag('target', src_release['tag_name'])
 
@@ -528,14 +530,18 @@ def import_release(src_release):
 
 
 def import_releases():
-    tag = '3.4.6.9'
-    src_release = get_release_by_tag('source', tag)
-    import_release(src_release)
-    return
+    # tag = '3.4.6.9'
+    # src_release = get_release_by_tag('source', tag)
+    # import_release(src_release)
+    # return
 
+    results = []
     src_releases = get_releases('source')
     for src_release in src_releases:
-        import_release(src_release)
+        print("(%d/%d) Importing release %s (tag %s)" % (len(results) + 1, len(src_releases),
+                                                         src_release['name'], src_release['tag_name']))
+        result = import_release(src_release)
+        results.append(result)
 
 
 if __name__ == '__main__':
