@@ -198,6 +198,11 @@ def format_comment(template_data):
     template = config.get('format', 'comment_template', fallback=default_template)
     return format_from_template(template, template_data)
 
+def format_release(template_data):
+    default_template = os.path.join(__location__, 'templates', 'release.md')
+    template = config.get('format', 'release_template', fallback=default_template)
+    return format_from_template(template, template_data)
+
 def send_request(which, url, post_data=None, method=None):
 
     if post_data is not None:
@@ -456,11 +461,92 @@ def import_issues(issues):
     return result_issues
 
 
+def get_releases(which):
+    releases = []
+    page = 1
+    print("Fetching releases", end='', flush=True)
+    while True:
+        new_releases = send_request(which, "releases?page=%d" % page)
+        if not new_releases:
+            break
+        releases.extend(new_releases)
+        print('.', end='', flush=True)
+        page += 1
+
+    print('', flush=True)
+    return releases
+
+
+def get_release_by_tag(which, tag):
+    page = 1
+    while True:
+        new_releases = send_request(which, "releases?page=%d" % page)
+        if not new_releases:
+            break
+        for release in new_releases:
+            if release['tag_name'] == tag:
+                return  release
+
+        page += 1
+
+
+def import_release(src_release):
+    print("Importing release %s (tag %s)" % (src_release['name'], src_release['tag_name']))
+
+    template_data = {}
+    template_data['user_name'] = src_release['author']['login']
+    template_data['user_url'] = src_release['author']['html_url']
+    template_data['user_avatar'] = src_release['author']['avatar_url']
+    template_data['date'] = format_date(src_release['created_at'])
+    template_data['url'] = src_release['html_url']
+    template_data['tag'] = src_release['tag_name']
+    template_data['branch'] = src_release['target_commitish']
+    template_data['body'] = src_release['body']
+
+    new_release = {
+        'tag_name': src_release['tag_name'],
+        'name': src_release['name'],
+        'body': format_release(template_data),
+        'prerelease': src_release['prerelease']
+    }
+
+    target_release = get_release_by_tag('target', src_release['tag_name'])
+
+    if target_release:
+        assert(src_release['tag_name'] == target_release['tag_name'])
+        result = send_request('target', 'releases/%d' % target_release['id'], new_release)
+        if result:
+            print("Updated release %s (tag %s)" % (result['name'], result['tag_name']))
+        else:
+            raise Exception("Failed to import release %s (tag %s)" % (result['name'], result['tag_name']))
+    else:
+        result = send_request('target', 'releases', new_release)
+        if result:
+            print("Created release %s (tag %s)" % (result['name'], result['tag_name']))
+        else:
+            raise Exception("Failed to import release %s (tag %s)" % (result['name'], result['tag_name']))
+
+
+def import_releases():
+    tag = '3.4.6.9'
+    src_release = get_release_by_tag('source', tag)
+    import_release(src_release)
+    return
+
+    src_releases = get_releases('source')
+    for src_release in src_releases:
+        import_release(src_release)
+
+
 if __name__ == '__main__':
 
     state.current = state.LOADING_CONFIG
 
     issue_ids = init_config()
+
+    import_releases()
+    exit(0)
+
     issues = []
 
     state.current = state.FETCHING_ISSUES
